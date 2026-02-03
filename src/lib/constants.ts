@@ -45,6 +45,7 @@ export const UI_TEXT = {
   nav: {
     search: "검색",
     favorites: "즐겨찾기",
+    stats: "통계",
     history: "검색 기록",
     vrchat: "VRChat",
     allCategories: "전체 카테고리",
@@ -57,6 +58,7 @@ export const UI_TEXT = {
     apply: "적용",
     reset: "초기화",
     filter: "필터",
+    minWishCount: "좋아요 최소",
   },
   avatarFilter: {
     title: "인기 아바타",

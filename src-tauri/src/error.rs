@@ -2,17 +2,12 @@ use serde::Serialize;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
-    #[error("HTTP request failed: {0}")]
-    Http(#[from] reqwest::Error),
-
-    #[error("Failed to parse HTML")]
+    #[error("Failed to parse data")]
     ParseError(String),
 
+    #[allow(dead_code)]
     #[error("Item not found: {0}")]
     NotFound(String),
-
-    #[error("Rate limited, please try again later")]
-    RateLimited,
 
     #[error("Database error: {0}")]
     Database(String),

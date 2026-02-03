@@ -1,3 +1,3 @@
+pub mod collections;
 pub mod db;
-pub mod item;
-pub mod search;
+pub mod stats;

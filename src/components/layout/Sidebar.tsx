@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   Search,
   Heart,
+  BarChart3,
   Store,
   ChevronDown,
   User,
@@ -36,6 +37,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 const navItems = [
   { to: "/", icon: Search, label: UI_TEXT.nav.search },
   { to: "/favorites", icon: Heart, label: UI_TEXT.nav.favorites },
+  { to: "/stats", icon: BarChart3, label: UI_TEXT.nav.stats },
 ];
 
 export default function Sidebar() {

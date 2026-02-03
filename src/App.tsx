@@ -5,13 +5,14 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import AppLayout from "./components/layout/AppLayout";
 import SearchPage from "./pages/SearchPage";
 import FavoritesPage from "./pages/FavoritesPage";
+import StatsPage from "./pages/StatsPage";
 import ItemDetailPage from "./pages/ItemDetailPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 10 * 60 * 1000,
-      gcTime: 30 * 60 * 1000,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       retry: false,
       refetchOnWindowFocus: false,
     },
@@ -28,6 +29,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<SearchPage />} />
                 <Route path="/favorites" element={<FavoritesPage />} />
+                <Route path="/stats" element={<StatsPage />} />
                 <Route path="/item/:id" element={<ItemDetailPage />} />
               </Routes>
             </AppLayout>

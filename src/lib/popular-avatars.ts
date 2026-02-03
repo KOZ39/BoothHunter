@@ -1,10 +1,11 @@
 import {
-  searchBooth,
+  backgroundFetch,
   getPopularAvatars as getPopularAvatarsApi,
   checkAvatarsNeedUpdate,
   updatePopularAvatar,
   type PopularAvatar,
 } from "./booth-api";
+import { parseSearchHtml } from "./booth-parser";
 
 export type { PopularAvatar };
 
@@ -21,23 +22,23 @@ export async function updateAvatarData(): Promise<void> {
 
   for (const avatar of avatars) {
     try {
-      const result = await searchBooth({
-        keyword: `${avatar.name_ja} 対応`,
-        page: 1,
-        category: "3D衣装",
-      });
+      const keyword = `${avatar.name_ja} 対応`;
+      const url = `https://booth.pm/ja/browse/${encodeURIComponent("3D衣装")}?q=${encodeURIComponent(keyword)}&page=1`;
+      // Uses separate background rate limiter — never blocks user searches
+      const resp = await backgroundFetch(url);
+      if (!resp.ok) continue;
+
+      const html = await resp.text();
+      const { items, totalCount } = parseSearchHtml(html);
 
       const thumbnailUrl =
-        result.items[0]?.images[0] ?? avatar.thumbnail_url;
+        items[0]?.images[0] ?? avatar.thumbnail_url;
 
       await updatePopularAvatar(
         avatar.id,
-        result.total_count ?? result.items.length,
+        totalCount ?? items.length,
         thumbnailUrl,
       );
-
-      // Rate limit: wait between requests
-      await new Promise((r) => setTimeout(r, 1500));
     } catch (e) {
       console.error(`Failed to update avatar ${avatar.name_ja}:`, e);
     }

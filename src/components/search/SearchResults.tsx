@@ -1,5 +1,6 @@
 import type { BoothItem } from "../../lib/types";
 import { UI_TEXT } from "../../lib/constants";
+import { useFavorites } from "../../hooks/useFavorites";
 import ItemCard from "./ItemCard";
 
 interface Props {
@@ -15,11 +16,13 @@ export default function SearchResults({
   error,
   totalCount,
 }: Props) {
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex items-center justify-center py-20" role="status" aria-live="polite">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
           <p className="text-sm text-gray-500">{UI_TEXT.search.searching}</p>
         </div>
       </div>
@@ -28,7 +31,7 @@ export default function SearchResults({
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex items-center justify-center py-20" role="alert">
         <p className="text-sm text-red-500">{error}</p>
       </div>
     );
@@ -51,7 +54,13 @@ export default function SearchResults({
       )}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {items.map((item) => (
-          <ItemCard key={item.id} item={item} />
+          <ItemCard
+            key={item.id}
+            item={item}
+            favorited={isFavorite(item.id)}
+            onAddFavorite={addFavorite}
+            onRemoveFavorite={removeFavorite}
+          />
         ))}
       </div>
     </div>

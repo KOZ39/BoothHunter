@@ -1,0 +1,96 @@
+import { useState, useRef } from "react";
+import { X } from "lucide-react";
+
+interface Props {
+  itemId: number;
+  tags: string[];
+  allUserTags: string[];
+  onSetTags: (itemId: number, tags: string[]) => Promise<void>;
+}
+
+export default function TagEditor({ itemId, tags, allUserTags, onSetTags }: Props) {
+  const [input, setInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const suggestions = allUserTags
+    .filter((t) => t.toLowerCase().includes(input.toLowerCase()) && !tags.includes(t))
+    .slice(0, 5);
+
+  const addTag = async (tag: string) => {
+    const trimmed = tag.trim();
+    if (!trimmed || tags.includes(trimmed)) return;
+    try {
+      await onSetTags(itemId, [...tags, trimmed]);
+      setInput("");
+      setShowSuggestions(false);
+    } catch (e) {
+      console.error("Add tag failed:", e);
+    }
+  };
+
+  const removeTag = async (tag: string) => {
+    try {
+      await onSetTags(itemId, tags.filter((t) => t !== tag));
+    } catch (e) {
+      console.error("Remove tag failed:", e);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && input.trim()) {
+      e.preventDefault();
+      addTag(input);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <div className="flex flex-wrap gap-1 items-center">
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs bg-indigo-100 text-indigo-700 rounded"
+          >
+            {tag}
+            <button
+              onClick={() => removeTag(tag)}
+              className="hover:text-indigo-900"
+            >
+              <X className="w-2.5 h-2.5" />
+            </button>
+          </span>
+        ))}
+        <div className="relative">
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            onKeyDown={handleKeyDown}
+            placeholder={tags.length === 0 ? "태그 추가..." : "+"}
+            maxLength={100}
+            className="w-20 px-1 py-0.5 text-xs border-none outline-none bg-transparent"
+          />
+          {showSuggestions && input && suggestions.length > 0 && (
+            <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-10 min-w-[120px]">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  onMouseDown={() => addTag(s)}
+                  className="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-indigo-50"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

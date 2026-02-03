@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { getBoothItem } from "../lib/booth-api";
 import { UI_TEXT } from "../lib/constants";
+import { useFavorites } from "../hooks/useFavorites";
 import FavoriteButton from "../components/favorites/FavoriteButton";
 import { open } from "@tauri-apps/plugin-shell";
 
@@ -16,6 +17,7 @@ export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
   const itemId = id ? parseInt(id, 10) : NaN;
   const [currentImage, setCurrentImage] = useState(0);
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
 
   useEffect(() => setCurrentImage(0), [itemId]);
 
@@ -166,7 +168,12 @@ export default function ItemDetailPage() {
               <h1 className="text-xl font-bold text-gray-900 flex-1">
                 {item.name}
               </h1>
-              <FavoriteButton item={item} />
+              <FavoriteButton
+                item={item}
+                favorited={isFavorite(item.id)}
+                onAdd={addFavorite}
+                onRemove={removeFavorite}
+              />
             </div>
 
             <p

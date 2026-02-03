@@ -24,6 +24,9 @@ export default function SearchBar({
   isLoading,
 }: Props) {
   const [keyword, setKeyword] = useState(initialKeyword);
+
+  useEffect(() => setKeyword(initialKeyword), [initialKeyword]);
+
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(-1);
   const [showDropdown, setShowDropdown] = useState(false);

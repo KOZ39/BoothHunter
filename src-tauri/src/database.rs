@@ -88,6 +88,7 @@ impl AppDatabase {
             );
 
             CREATE INDEX IF NOT EXISTS idx_collection_items_item ON collection_items(item_id);
+            CREATE INDEX IF NOT EXISTS idx_collection_items_collection ON collection_items(collection_id);
             CREATE INDEX IF NOT EXISTS idx_item_tags_item ON item_tags(item_id);
             CREATE INDEX IF NOT EXISTS idx_item_tags_tag ON item_tags(tag);",
         )?;

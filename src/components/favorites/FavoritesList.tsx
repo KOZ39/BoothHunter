@@ -1,12 +1,40 @@
+import { memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Trash2 } from "lucide-react";
 import { useFavorites } from "../../hooks/useFavorites";
+import {
+  useCollections,
+  useAllUserTags,
+  useAllItemTagsBatch,
+  useAllItemCollectionsBatch,
+} from "../../hooks/useCollections";
+import { setItemTags } from "../../lib/booth-api";
+import { useQueryClient } from "@tanstack/react-query";
 import { UI_TEXT } from "../../lib/constants";
+import type { FavoriteItem } from "../../lib/types";
+import TagEditor from "./TagEditor";
+import AddToCollectionMenu from "./AddToCollectionMenu";
 
-export default function FavoritesList() {
+interface Props {
+  items?: FavoriteItem[];
+}
+
+export default memo(function FavoritesList({ items }: Props) {
   const { favorites, isLoading, removeFavorite } = useFavorites();
+  const { collections, addItem, removeItem } = useCollections();
+  const { data: allUserTags } = useAllUserTags();
+  const { data: tagsBatch } = useAllItemTagsBatch();
+  const { data: collectionsBatch } = useAllItemCollectionsBatch();
+  const qc = useQueryClient();
+  const displayItems = items ?? favorites;
 
-  if (isLoading) {
+  const handleSetTags = useCallback(async (itemId: number, tags: string[]) => {
+    await setItemTags(itemId, tags);
+    qc.invalidateQueries({ queryKey: ["all-item-tags-batch"] });
+    qc.invalidateQueries({ queryKey: ["all-user-tags"] });
+  }, [qc]);
+
+  if (isLoading && !items) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -14,7 +42,7 @@ export default function FavoritesList() {
     );
   }
 
-  if (favorites.length === 0) {
+  if (displayItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-400">
         <Heart className="w-16 h-16 mb-4" />
@@ -25,7 +53,7 @@ export default function FavoritesList() {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {favorites.map((fav) => (
+      {displayItems.map((fav) => (
         <div
           key={fav.id}
           className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group"
@@ -54,13 +82,22 @@ export default function FavoritesList() {
               >
                 {fav.name}
               </Link>
-              <button
-                onClick={() => removeFavorite(fav.item_id).catch((e) => console.error("Remove failed:", e))}
-                className="p-1 text-gray-300 hover:text-red-500 transition-colors shrink-0"
-                title="즐겨찾기 제거"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center shrink-0">
+                <AddToCollectionMenu
+                  itemId={fav.item_id}
+                  collections={collections}
+                  memberCollectionIds={collectionsBatch?.[fav.item_id] ?? []}
+                  onAddToCollection={addItem}
+                  onRemoveFromCollection={removeItem}
+                />
+                <button
+                  onClick={() => removeFavorite(fav.item_id).catch((e) => console.error("Remove failed:", e))}
+                  className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                  title="즐겨찾기 제거"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span
@@ -76,9 +113,17 @@ export default function FavoritesList() {
                 </span>
               )}
             </div>
+            <div className="mt-2">
+              <TagEditor
+                itemId={fav.item_id}
+                tags={tagsBatch?.[fav.item_id] ?? []}
+                allUserTags={allUserTags ?? []}
+                onSetTags={handleSetTags}
+              />
+            </div>
           </div>
         </div>
       ))}
     </div>
   );
-}
+});

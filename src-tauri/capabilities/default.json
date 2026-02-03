@@ -5,6 +5,13 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "shell:default"
+    "shell:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://booth.pm/**" },
+        { "url": "https://*.booth.pm/**" }
+      ]
+    }
   ]
 }

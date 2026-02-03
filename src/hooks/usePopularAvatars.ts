@@ -7,7 +7,8 @@ import {
   type PopularAvatar,
 } from "../lib/popular-avatars";
 
-// Module-level lock to prevent concurrent background updates across hook instances
+// Module-level lock to prevent concurrent background updates across hook instances.
+// The flag is always reset in a finally block, so it cannot get stuck.
 let updateInProgress = false;
 
 export function usePopularAvatars() {
@@ -22,29 +23,28 @@ export function usePopularAvatars() {
 
   // Background update if data is stale (>7 days)
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     (async () => {
       try {
         if (updateInProgress) return;
-        if (await needsUpdate()) {
-          if (cancelled || updateInProgress) return;
-          updateInProgress = true;
-          try {
-            await updateAvatarData();
-            if (!cancelled) {
-              refetchRef.current();
-            }
-          } finally {
-            updateInProgress = false;
+        if (!(await needsUpdate())) return;
+        if (controller.signal.aborted || updateInProgress) return;
+        updateInProgress = true;
+        try {
+          await updateAvatarData();
+          if (!controller.signal.aborted) {
+            refetchRef.current();
           }
+        } finally {
+          updateInProgress = false;
         }
       } catch (e) {
-        console.error("Background avatar update failed:", e);
         updateInProgress = false;
+        console.error("Background avatar update failed:", e);
       }
     })();
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, []);
 

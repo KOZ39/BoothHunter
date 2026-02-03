@@ -5,17 +5,14 @@ mod error;
 
 use tauri::Manager;
 
-use booth::client::BoothClient;
 use database::AppDatabase;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .manage(BoothClient::new())
+        .plugin(tauri_plugin_http::init())
         .invoke_handler(tauri::generate_handler![
-            commands::search::search_booth,
-            commands::item::get_booth_item,
             commands::db::cache_items,
             commands::db::save_search_history,
             commands::db::get_favorites,
@@ -24,6 +21,28 @@ pub fn run() {
             commands::db::get_popular_avatars,
             commands::db::check_avatars_need_update,
             commands::db::update_popular_avatar,
+            commands::collections::get_collections,
+            commands::collections::create_collection,
+            commands::collections::rename_collection,
+            commands::collections::update_collection_color,
+            commands::collections::delete_collection,
+            commands::collections::add_to_collection,
+            commands::collections::remove_from_collection,
+            commands::collections::get_collection_items,
+            commands::collections::get_item_collections,
+            commands::collections::set_item_tags,
+            commands::collections::get_item_tags,
+            commands::collections::get_all_user_tags,
+            commands::collections::get_all_item_tags_batch,
+            commands::collections::get_all_item_collections_batch,
+            commands::stats::get_all_statistics,
+            commands::stats::get_dashboard_stats,
+            commands::stats::get_category_distribution,
+            commands::stats::get_price_distribution,
+            commands::stats::get_top_tags,
+            commands::stats::get_search_history_stats,
+            commands::stats::get_monthly_favorites,
+            commands::stats::get_top_shops,
         ])
         .setup(|app| {
             // Initialize database

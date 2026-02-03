@@ -13,6 +13,8 @@ export function useFavorites() {
   const favoritesQuery = useQuery({
     queryKey: ["favorites"],
     queryFn: (): Promise<FavoriteItem[]> => getFavorites(),
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 
   const favorites = favoritesQuery.data ?? [];

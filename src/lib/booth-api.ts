@@ -1,17 +1,237 @@
+import { fetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
-import type { BoothItem, SearchParams, SearchResult, FavoriteItem } from "./types";
+import { parseSearchHtml, parseItemDetailHtml } from "./booth-parser";
+import type {
+  BoothItem,
+  SearchParams,
+  SearchResult,
+  FavoriteItem,
+  Collection,
+  AllStatistics,
+  DashboardStats,
+  CategoryStat,
+  PriceBucket,
+  TagStat,
+  SearchFrequency,
+  MonthlyCount,
+  ShopStat,
+} from "./types";
 
-// ── Search API ─────────────────────────────────────────
+// ── Rate limiters (separate queues for different priorities) ──
+
+const RATE_LIMIT_MS = 1000;
+const HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+};
+
+function createRateLimiter(delayMs: number) {
+  let queue: Promise<void> = Promise.resolve();
+  return async function limitedFetch(url: string): Promise<Response> {
+    const ticket = queue.then(
+      () => new Promise<void>((r) => setTimeout(r, delayMs)),
+    );
+    queue = ticket;
+    await ticket;
+    return fetch(url, { headers: HEADERS });
+  };
+}
+
+/** Primary limiter for user-initiated searches and item detail fetches */
+const rateLimitedFetch = createRateLimiter(RATE_LIMIT_MS);
+
+/** Separate limiter for wish-count enrichment — runs independently of user searches */
+const enrichFetch = createRateLimiter(RATE_LIMIT_MS);
+
+/** Separate limiter for background avatar updates — never blocks user activity */
+const backgroundFetch = createRateLimiter(1500);
+
+// ── URL builder (ported from Rust client.rs) ─────────
+
+function buildSearchUrl(params: SearchParams): string {
+  const page = Math.min(params.page ?? 1, 10_000);
+  const keyword = params.keyword.trim();
+  const keywordEmpty = keyword === "";
+
+  let url: string;
+  if (params.category) {
+    if (keywordEmpty) {
+      url = `https://booth.pm/ja/browse/${encodeURIComponent(params.category)}?page=${page}`;
+    } else {
+      url = `https://booth.pm/ja/browse/${encodeURIComponent(params.category)}?q=${encodeURIComponent(keyword)}&page=${page}`;
+    }
+  } else {
+    url = `https://booth.pm/ja/items?q=${encodeURIComponent(keyword)}&page=${page}`;
+  }
+
+  const validSorts = ["new", "popular", "price_asc", "price_desc"];
+  if (params.sort && validSorts.includes(params.sort)) {
+    url += `&sort=${params.sort}`;
+  }
+
+  if (params.only_free) {
+    url += "&max_price=0";
+  } else {
+    if (params.price_min != null) url += `&min_price=${params.price_min}`;
+    if (params.price_max != null) url += `&max_price=${params.price_max}`;
+  }
+
+  return url;
+}
+
+/** Exposed for background tasks (avatar updates) that should not block user activity */
+export { backgroundFetch };
+
+// ── Search API (direct fetch + JS parse) ─────────────
 
 export async function searchBooth(params: SearchParams): Promise<SearchResult> {
-  return invoke<SearchResult>("search_booth", { params });
+  const url = buildSearchUrl(params);
+  const resp = await rateLimitedFetch(url);
+
+  if (resp.status === 429) throw new Error("Rate limited by Booth.pm");
+  if (!resp.ok) throw new Error(`Search returned ${resp.status}`);
+
+  const html = await resp.text();
+  const { items, totalCount } = parseSearchHtml(html);
+
+  return {
+    items,
+    total_count: totalCount,
+    current_page: params.page ?? 1,
+  };
 }
+
+// ── Item detail (direct fetch) ───────────────────────
 
 export async function getBoothItem(itemId: number): Promise<BoothItem> {
-  return invoke<BoothItem>("get_booth_item", { itemId });
+  // Try JSON API first
+  try {
+    const resp = await rateLimitedFetch(
+      `https://booth.pm/ja/items/${itemId}.json`,
+    );
+    if (resp.ok) {
+      const data = await resp.json();
+      const item = jsonToBoothItem(data);
+      if (item) return item;
+    }
+  } catch {
+    // fall through to HTML
+  }
+
+  // Fallback to HTML
+  const resp = await rateLimitedFetch(
+    `https://booth.pm/ja/items/${itemId}`,
+  );
+  if (resp.status === 429) throw new Error("Rate limited by Booth.pm");
+  if (!resp.ok) throw new Error(`Item ${itemId} not found`);
+
+  const html = await resp.text();
+  const item = parseItemDetailHtml(html, itemId);
+  if (!item) throw new Error(`Item ${itemId} not found in HTML`);
+  return item;
 }
 
-// ── Cache / History ────────────────────────────────────
+// ── JSON item parser (mirrors Rust BoothJsonItemDetail) ──
+
+function parsePrice(val: unknown): number {
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const cleaned = val.replace(/\D/g, "");
+    return Number(cleaned) || 0;
+  }
+  return 0;
+}
+
+function jsonToBoothItem(data: Record<string, unknown>): BoothItem | null {
+  const id = data.id as number | undefined;
+  if (id == null) return null;
+
+  const images: string[] = [];
+  if (Array.isArray(data.images)) {
+    for (const img of data.images) {
+      const src =
+        (img as Record<string, unknown>).original ??
+        (img as Record<string, unknown>).resized;
+      if (typeof src === "string") images.push(src);
+    }
+  }
+
+  const tags: string[] = [];
+  if (Array.isArray(data.tags)) {
+    for (const t of data.tags) {
+      const name = (t as Record<string, unknown>).name;
+      if (typeof name === "string") tags.push(name);
+    }
+  }
+
+  const category = data.category as Record<string, unknown> | undefined;
+  const shop = data.shop as Record<string, unknown> | undefined;
+
+  const wishListsCount =
+    typeof data.wish_lists_count === "number" ? data.wish_lists_count : undefined;
+
+  return {
+    id,
+    name: (data.name as string) || "",
+    description: (data.description as string) || null,
+    price: parsePrice(data.price),
+    category_name: (category?.name as string) || null,
+    shop_name: (shop?.name as string) || null,
+    url:
+      (data.url as string) || `https://booth.pm/ja/items/${id}`,
+    images,
+    tags,
+    wish_lists_count: wishListsCount,
+  };
+}
+
+// ── Wish count enrichment ────────────────────────────
+
+const ENRICH_CONCURRENCY = 3;
+
+/**
+ * Fetch wish_lists_count for items that don't have it yet.
+ * Calls the JSON API for each item with concurrency limiting.
+ * Returns a new array with wish counts filled in progressively.
+ * Calls `onProgress` after each batch so the UI can update incrementally.
+ */
+export async function enrichWithWishCount(
+  items: BoothItem[],
+  onProgress: (updated: BoothItem[]) => void,
+): Promise<BoothItem[]> {
+  const result = [...items];
+  const toFetch = result
+    .map((item, idx) => ({ item, idx }))
+    .filter(({ item }) => item.wish_lists_count == null);
+
+  for (let i = 0; i < toFetch.length; i += ENRICH_CONCURRENCY) {
+    const batch = toFetch.slice(i, i + ENRICH_CONCURRENCY);
+    await Promise.allSettled(
+      batch.map(async ({ item, idx }) => {
+        try {
+          const resp = await enrichFetch(
+            `https://booth.pm/ja/items/${item.id}.json`,
+          );
+          if (resp.ok) {
+            const data = await resp.json();
+            const count =
+              typeof data.wish_lists_count === "number"
+                ? data.wish_lists_count
+                : 0;
+            result[idx] = { ...result[idx], wish_lists_count: count };
+          }
+        } catch {
+          // Skip failed items — leave wish_lists_count as undefined
+        }
+      }),
+    );
+    onProgress([...result]);
+  }
+
+  return result;
+}
+
+// ── Cache / History (unchanged — Rust invoke) ────────
 
 export async function cacheItems(items: BoothItem[]): Promise<void> {
   return invoke("cache_items", { items });
@@ -21,7 +241,7 @@ export async function saveSearchHistory(keyword: string): Promise<void> {
   return invoke("save_search_history", { keyword });
 }
 
-// ── Favorites ──────────────────────────────────────────
+// ── Favorites (unchanged — Rust invoke) ──────────────
 
 export async function getFavorites(): Promise<FavoriteItem[]> {
   return invoke<FavoriteItem[]>("get_favorites");
@@ -42,7 +262,7 @@ export async function removeFavorite(itemId: number): Promise<void> {
   return invoke("remove_favorite", { itemId });
 }
 
-// ── Popular Avatars ────────────────────────────────────
+// ── Popular Avatars (unchanged — Rust invoke) ────────
 
 export interface PopularAvatar {
   id: number;
@@ -68,4 +288,98 @@ export async function updatePopularAvatar(
   thumbnailUrl: string | null,
 ): Promise<void> {
   return invoke("update_popular_avatar", { id, itemCount, thumbnailUrl });
+}
+
+// ── Collections ──────────────────────────────────────
+
+export async function getCollections(): Promise<Collection[]> {
+  return invoke<Collection[]>("get_collections");
+}
+
+export async function createCollection(name: string, color?: string): Promise<number> {
+  return invoke<number>("create_collection", { params: { name, color } });
+}
+
+export async function renameCollection(id: number, name: string): Promise<void> {
+  return invoke("rename_collection", { id, name });
+}
+
+export async function updateCollectionColor(id: number, color: string): Promise<void> {
+  return invoke("update_collection_color", { id, color });
+}
+
+export async function deleteCollection(id: number): Promise<void> {
+  return invoke("delete_collection", { id });
+}
+
+export async function addToCollection(collectionId: number, itemId: number): Promise<void> {
+  return invoke("add_to_collection", { collectionId, itemId });
+}
+
+export async function removeFromCollection(collectionId: number, itemId: number): Promise<void> {
+  return invoke("remove_from_collection", { collectionId, itemId });
+}
+
+export async function getCollectionItems(collectionId: number): Promise<FavoriteItem[]> {
+  return invoke<FavoriteItem[]>("get_collection_items", { collectionId });
+}
+
+export async function getItemCollections(itemId: number): Promise<number[]> {
+  return invoke<number[]>("get_item_collections", { itemId });
+}
+
+// ── Item Tags ────────────────────────────────────────
+
+export async function setItemTags(itemId: number, tags: string[]): Promise<void> {
+  return invoke("set_item_tags", { itemId, tags });
+}
+
+export async function getItemTags(itemId: number): Promise<string[]> {
+  return invoke<string[]>("get_item_tags", { itemId });
+}
+
+export async function getAllUserTags(): Promise<string[]> {
+  return invoke<string[]>("get_all_user_tags");
+}
+
+export async function getAllItemTagsBatch(): Promise<Record<number, string[]>> {
+  return invoke<Record<number, string[]>>("get_all_item_tags_batch");
+}
+
+export async function getAllItemCollectionsBatch(): Promise<Record<number, number[]>> {
+  return invoke<Record<number, number[]>>("get_all_item_collections_batch");
+}
+
+// ── Statistics ────────────────────────────────────────
+
+export async function getAllStatistics(): Promise<AllStatistics> {
+  return invoke<AllStatistics>("get_all_statistics");
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  return invoke<DashboardStats>("get_dashboard_stats");
+}
+
+export async function getCategoryDistribution(): Promise<CategoryStat[]> {
+  return invoke<CategoryStat[]>("get_category_distribution");
+}
+
+export async function getPriceDistribution(): Promise<PriceBucket[]> {
+  return invoke<PriceBucket[]>("get_price_distribution");
+}
+
+export async function getTopTags(): Promise<TagStat[]> {
+  return invoke<TagStat[]>("get_top_tags");
+}
+
+export async function getSearchHistoryStats(): Promise<SearchFrequency[]> {
+  return invoke<SearchFrequency[]>("get_search_history_stats");
+}
+
+export async function getMonthlyFavorites(): Promise<MonthlyCount[]> {
+  return invoke<MonthlyCount[]>("get_monthly_favorites");
+}
+
+export async function getTopShops(): Promise<ShopStat[]> {
+  return invoke<ShopStat[]>("get_top_shops");
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 
 interface SearchContextValue {
   activeCategory: string | null;
@@ -10,10 +10,13 @@ const SearchContext = createContext<SearchContextValue | null>(null);
 export function SearchProvider({ children }: { children: ReactNode }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  const value = useMemo(
+    () => ({ activeCategory, setActiveCategory }),
+    [activeCategory],
+  );
+
   return (
-    <SearchContext.Provider
-      value={{ activeCategory, setActiveCategory }}
-    >
+    <SearchContext.Provider value={value}>
       {children}
     </SearchContext.Provider>
   );

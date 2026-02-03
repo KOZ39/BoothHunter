@@ -46,8 +46,8 @@ pub struct PopularAvatar {
 
 #[tauri::command]
 pub fn cache_items(db: State<'_, AppDatabase>, items: Vec<BoothItem>) -> AppResult<()> {
-    let conn = db.conn()?;
-    let tx = conn.unchecked_transaction()?;
+    let mut conn = db.conn_mut()?;
+    let tx = conn.transaction()?;
     for item in &items {
         let images_json = serde_json::to_string(&item.images).unwrap_or_else(|e| {
             log::warn!("Failed to serialize images for item {}: {}", item.id, e);
@@ -59,8 +59,8 @@ pub fn cache_items(db: State<'_, AppDatabase>, items: Vec<BoothItem>) -> AppResu
         });
         tx.execute(
             "INSERT OR REPLACE INTO cached_items
-             (id, name, description, price, category_name, shop_name, url, images_json, tags_json, cached_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, datetime('now'))",
+             (id, name, description, price, category_name, shop_name, url, images_json, tags_json, wish_count, cached_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, datetime('now'))",
             params![
                 item.id,
                 item.name,
@@ -71,6 +71,7 @@ pub fn cache_items(db: State<'_, AppDatabase>, items: Vec<BoothItem>) -> AppResu
                 item.url,
                 images_json,
                 tags_json,
+                item.wish_lists_count,
             ],
         )?;
     }
@@ -80,6 +81,7 @@ pub fn cache_items(db: State<'_, AppDatabase>, items: Vec<BoothItem>) -> AppResu
 
 #[tauri::command]
 pub fn save_search_history(db: State<'_, AppDatabase>, keyword: String) -> AppResult<()> {
+    let keyword = keyword.trim().to_string();
     if keyword.is_empty() {
         return Ok(());
     }
@@ -87,6 +89,11 @@ pub fn save_search_history(db: State<'_, AppDatabase>, keyword: String) -> AppRe
     conn.execute(
         "INSERT INTO search_history (keyword, searched_at) VALUES (?1, datetime('now'))",
         params![keyword],
+    )?;
+    // Prune old entries to prevent unbounded growth
+    conn.execute(
+        "DELETE FROM search_history WHERE id NOT IN (SELECT id FROM search_history ORDER BY searched_at DESC LIMIT 10000)",
+        [],
     )?;
     Ok(())
 }
@@ -139,8 +146,12 @@ pub fn add_favorite(db: State<'_, AppDatabase>, params: AddFavoriteParams) -> Ap
 
 #[tauri::command]
 pub fn remove_favorite(db: State<'_, AppDatabase>, item_id: i64) -> AppResult<()> {
-    let conn = db.conn()?;
-    conn.execute("DELETE FROM favorites WHERE item_id = ?1", params![item_id])?;
+    let mut conn = db.conn_mut()?;
+    let tx = conn.transaction()?;
+    tx.execute("DELETE FROM collection_items WHERE item_id = ?1", params![item_id])?;
+    tx.execute("DELETE FROM item_tags WHERE item_id = ?1", params![item_id])?;
+    tx.execute("DELETE FROM favorites WHERE item_id = ?1", params![item_id])?;
+    tx.commit()?;
     Ok(())
 }
 

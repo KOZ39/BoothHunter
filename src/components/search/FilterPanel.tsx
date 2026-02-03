@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Heart } from "lucide-react";
 import { clsx } from "clsx";
 import { UI_TEXT, SORT_OPTIONS } from "../../lib/constants";
 import type { SearchParams } from "../../lib/types";
@@ -7,15 +7,19 @@ import type { SearchParams } from "../../lib/types";
 interface Props {
   params: SearchParams;
   onFilterChange: (filters: Partial<SearchParams>) => void;
+  isEnriching?: boolean;
 }
 
-export default function FilterPanel({ params, onFilterChange }: Props) {
+export default function FilterPanel({ params, onFilterChange, isEnriching }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [priceMin, setPriceMin] = useState(
     params.price_min?.toString() ?? "",
   );
   const [priceMax, setPriceMax] = useState(
     params.price_max?.toString() ?? "",
+  );
+  const [wishMin, setWishMin] = useState(
+    params.min_wish_count?.toString() ?? "",
   );
 
   const handleApplyPrice = () => {
@@ -32,15 +36,24 @@ export default function FilterPanel({ params, onFilterChange }: Props) {
     });
   };
 
+  const handleApplyWish = () => {
+    const num = parseInt(wishMin, 10);
+    onFilterChange({
+      min_wish_count: !isNaN(num) && num > 0 ? num : undefined,
+    });
+  };
+
   const handleReset = () => {
     setPriceMin("");
     setPriceMax("");
+    setWishMin("");
     onFilterChange({
       category: undefined,
       sort: undefined,
       only_free: undefined,
       price_min: undefined,
       price_max: undefined,
+      min_wish_count: undefined,
     });
   };
 
@@ -92,7 +105,7 @@ export default function FilterPanel({ params, onFilterChange }: Props) {
         </label>
 
         {/* Active filter indicators */}
-        {(params.category || params.price_min || params.price_max) && (
+        {(params.category || params.price_min || params.price_max || params.min_wish_count) && (
           <button
             onClick={handleReset}
             className="flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:text-red-700"
@@ -104,7 +117,7 @@ export default function FilterPanel({ params, onFilterChange }: Props) {
       </div>
 
       {isOpen && (
-        <div className="mt-3 p-4 bg-white rounded-lg border border-gray-200">
+        <div className="mt-3 p-4 bg-white rounded-lg border border-gray-200 space-y-4">
           {/* Price range */}
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-2">
@@ -128,6 +141,36 @@ export default function FilterPanel({ params, onFilterChange }: Props) {
               />
               <button
                 onClick={handleApplyPrice}
+                className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
+              >
+                {UI_TEXT.filter.apply}
+              </button>
+            </div>
+          </div>
+
+          {/* Wish count filter */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+              <Heart className="w-3.5 h-3.5 text-pink-500" />
+              {UI_TEXT.filter.minWishCount}
+              {isEnriching && (
+                <span className="text-xs text-gray-400 font-normal ml-1">
+                  (로딩 중...)
+                </span>
+              )}
+            </h4>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="0"
+                min="0"
+                value={wishMin}
+                onChange={(e) => setWishMin(e.target.value)}
+                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+              <span className="text-xs text-gray-500">개 이상</span>
+              <button
+                onClick={handleApplyWish}
                 className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
               >
                 {UI_TEXT.filter.apply}
