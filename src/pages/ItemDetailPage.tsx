@@ -8,7 +8,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { getBoothItem } from "../lib/booth-api";
-import { UI_TEXT } from "../lib/constants";
+import { useI18n } from "../lib/i18n";
 import { useFavorites } from "../hooks/useFavorites";
 import FavoriteButton from "../components/favorites/FavoriteButton";
 import { open } from "@tauri-apps/plugin-shell";
@@ -18,6 +18,7 @@ export default function ItemDetailPage() {
   const itemId = id ? parseInt(id, 10) : NaN;
   const [currentImage, setCurrentImage] = useState(0);
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const { t, language } = useI18n();
 
   useEffect(() => setCurrentImage(0), [itemId]);
 
@@ -27,6 +28,9 @@ export default function ItemDetailPage() {
     enabled: !isNaN(itemId),
   });
 
+  const backText = language === "ko" ? "돌아가기" : "Go back";
+  const invalidIdText = language === "ko" ? "잘못된 아이템 ID입니다." : "Invalid item ID.";
+
   if (isNaN(itemId)) {
     return (
       <div className="p-6">
@@ -35,9 +39,9 @@ export default function ItemDetailPage() {
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          돌아가기
+          {backText}
         </Link>
-        <p className="text-red-500">잘못된 아이템 ID입니다.</p>
+        <p className="text-red-500">{invalidIdText}</p>
       </div>
     );
   }
@@ -74,15 +78,15 @@ export default function ItemDetailPage() {
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          돌아가기
+          {backText}
         </Link>
-        <p className="text-red-500">{UI_TEXT.common.error}</p>
+        <p className="text-red-500">{t.common.error}</p>
       </div>
     );
   }
 
   const priceText =
-    item.price === 0 ? UI_TEXT.item.free : `¥${item.price.toLocaleString()}`;
+    item.price === 0 ? t.item.free : `¥${item.price.toLocaleString()}`;
 
   return (
     <div className="p-6">
@@ -92,7 +96,7 @@ export default function ItemDetailPage() {
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          돌아가기
+          {backText}
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -185,7 +189,7 @@ export default function ItemDetailPage() {
             {item.shop_name && (
               <div className="mt-4">
                 <span className="text-sm text-gray-500">
-                  {UI_TEXT.item.shop}:
+                  {t.item.shop}:
                 </span>
                 <span className="ml-2 text-sm text-gray-700">
                   {item.shop_name}
@@ -196,7 +200,7 @@ export default function ItemDetailPage() {
             {item.category_name && (
               <div className="mt-2">
                 <span className="text-sm text-gray-500">
-                  {UI_TEXT.item.category}:
+                  {t.item.category}:
                 </span>
                 <span className="ml-2 text-sm text-gray-700">
                   {item.category_name}
@@ -207,7 +211,7 @@ export default function ItemDetailPage() {
             {item.tags.length > 0 && (
               <div className="mt-4">
                 <span className="text-sm text-gray-500 block mb-2">
-                  {UI_TEXT.item.tags}:
+                  {t.item.tags}:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {item.tags.map((tag) => (
@@ -227,13 +231,13 @@ export default function ItemDetailPage() {
               className="mt-6 flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
-              {UI_TEXT.item.openInBooth}
+              {t.item.openInBooth}
             </button>
 
             {item.description && (
               <div className="mt-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  {UI_TEXT.item.description}
+                  {t.item.description}
                 </h3>
                 <div className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
                   {item.description}

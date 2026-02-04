@@ -16,7 +16,6 @@ function matchDict(token: string): DictEntry | undefined {
 function convertToken(token: string): SearchSuggestion | null {
   if (!containsHangul(token)) return null;
 
-  // Exact dictionary match
   const dictMatch = matchDict(token);
   if (dictMatch && dictMatch.ko === token) {
     return {
@@ -26,7 +25,6 @@ function convertToken(token: string): SearchSuggestion | null {
     };
   }
 
-  // Partial dictionary match (token contains a dict entry)
   if (dictMatch) {
     const remaining = token.replace(dictMatch.ko, "");
     const convertedRemaining = containsHangul(remaining)
@@ -39,7 +37,6 @@ function convertToken(token: string): SearchSuggestion | null {
     };
   }
 
-  // Pure katakana conversion
   const katakana = hangulToKatakana(token);
   if (katakana !== token) {
     return {
@@ -61,7 +58,6 @@ export function getSuggestions(input: string): SearchSuggestion[] {
 
   const tokens = input.trim().split(/\s+/);
 
-  // 1. Try full-input dictionary match
   const fullMatch = matchDict(input.trim());
   if (fullMatch) {
     const key = fullMatch.ja;
@@ -75,7 +71,6 @@ export function getSuggestions(input: string): SearchSuggestion[] {
     }
   }
 
-  // 2. Token-by-token dictionary matching + katakana conversion
   if (tokens.length >= 1) {
     const convertedTokens = tokens.map((token) => {
       const result = convertToken(token);
@@ -92,7 +87,6 @@ export function getSuggestions(input: string): SearchSuggestion[] {
     }
   }
 
-  // 3. Prefix-match dictionary entries
   const trimmed = input.trim().toLowerCase();
   for (const entry of ALL_DICT) {
     if (entry.ko.startsWith(trimmed) && !seen.has(entry.ja)) {
@@ -105,7 +99,6 @@ export function getSuggestions(input: string): SearchSuggestion[] {
     }
   }
 
-  // 4. Pure katakana of full input as fallback
   const fullKatakana = hangulToKatakana(input.trim());
   if (fullKatakana !== input.trim() && !seen.has(fullKatakana)) {
     seen.add(fullKatakana);

@@ -6,7 +6,8 @@ import SearchResults from "../components/search/SearchResults";
 import FilterPanel from "../components/search/FilterPanel";
 import AvatarQuickFilter from "../components/search/AvatarQuickFilter";
 import Pagination from "../components/common/Pagination";
-import { ITEMS_PER_PAGE, UI_TEXT, CATEGORIES } from "../lib/constants";
+import { ITEMS_PER_PAGE } from "../lib/constants";
+import { useI18n, getCategoryLabel } from "../lib/i18n";
 import { Search, X } from "lucide-react";
 
 export default function SearchPage() {
@@ -25,6 +26,7 @@ export default function SearchPage() {
   } = useSearch();
 
   const { activeCategory, setActiveCategory } = useSearchContext();
+  const { t } = useI18n();
   const prevCategory = useRef(activeCategory);
 
   // Sync sidebar category → search filters
@@ -53,7 +55,7 @@ export default function SearchPage() {
       : currentPage;
 
   const categoryLabel = activeCategory
-    ? CATEGORIES[activeCategory] ?? activeCategory
+    ? getCategoryLabel(activeCategory, t)
     : null;
 
   return (
@@ -99,9 +101,9 @@ export default function SearchPage() {
           {!hasSearched ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-400">
               <Search className="w-16 h-16 mb-4" />
-              <p className="text-lg">{UI_TEXT.search.placeholder}</p>
+              <p className="text-lg">{t.search.placeholder}</p>
               <p className="text-sm mt-1">
-                VRChat 아바타, 의상, 소품 등을 검색하세요
+                {t.avatarFilter.clickHint}
               </p>
             </div>
           ) : (

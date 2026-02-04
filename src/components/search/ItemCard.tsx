@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
 import type { BoothItem } from "../../lib/types";
-import { UI_TEXT } from "../../lib/constants";
+import { useI18n } from "../../lib/i18n";
 import FavoriteButton from "../favorites/FavoriteButton";
 
 interface Props {
@@ -13,9 +13,10 @@ interface Props {
 }
 
 export default memo(function ItemCard({ item, favorited, onAddFavorite, onRemoveFavorite }: Props) {
+  const { t } = useI18n();
   const thumbnail = item.images[0] || "";
   const priceText =
-    item.price === 0 ? UI_TEXT.item.free : `¥${item.price.toLocaleString()}`;
+    item.price === 0 ? t.item.free : `¥${item.price.toLocaleString()}`;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group">

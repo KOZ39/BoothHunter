@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FolderPlus, Trash2, Pencil, Check, X } from "lucide-react";
 import { clsx } from "clsx";
 import { useCollections } from "../../hooks/useCollections";
+import { useI18n } from "../../lib/i18n";
 
 const COLORS = [
   "#6366f1", "#ec4899", "#f59e0b", "#10b981",
@@ -16,6 +17,7 @@ interface Props {
 
 export default function CollectionSidebar({ selected, onSelect, totalCount }: Props) {
   const { collections, create, rename, remove } = useCollections();
+  const { t, language } = useI18n();
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState(COLORS[0]);
@@ -66,7 +68,7 @@ export default function CollectionSidebar({ selected, onSelect, totalCount }: Pr
             : "text-gray-700 hover:bg-gray-100",
         )}
       >
-        전체 ({totalCount})
+        {language === "ko" ? `전체 (${totalCount})` : `All (${totalCount})`}
       </button>
 
       {/* Collection list */}
@@ -144,7 +146,7 @@ export default function CollectionSidebar({ selected, onSelect, totalCount }: Pr
               if (e.key === "Enter") handleCreate();
               if (e.key === "Escape") setIsCreating(false);
             }}
-            placeholder="컬렉션 이름"
+            placeholder={t.collections.namePlaceholder}
             maxLength={200}
             className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
@@ -166,13 +168,13 @@ export default function CollectionSidebar({ selected, onSelect, totalCount }: Pr
               onClick={handleCreate}
               className="px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700"
             >
-              생성
+              {language === "ko" ? "생성" : "Create"}
             </button>
             <button
               onClick={() => setIsCreating(false)}
               className="px-3 py-1 text-gray-600 rounded text-xs hover:bg-gray-100"
             >
-              취소
+              {language === "ko" ? "취소" : "Cancel"}
             </button>
           </div>
         </div>
@@ -182,7 +184,7 @@ export default function CollectionSidebar({ selected, onSelect, totalCount }: Pr
           className="mt-3 flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-indigo-600 w-full"
         >
           <FolderPlus className="w-3.5 h-3.5" />
-          새 컬렉션
+          {t.collections.create}
         </button>
       )}
     </div>

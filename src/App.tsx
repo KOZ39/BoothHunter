@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SearchProvider } from "./lib/SearchContext";
+import { I18nProvider } from "./lib/i18n";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import AppLayout from "./components/layout/AppLayout";
 import SearchPage from "./pages/SearchPage";
@@ -22,20 +23,22 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
-        <SearchProvider>
-          <BrowserRouter>
-            <AppLayout>
-              <Routes>
-                <Route path="/" element={<SearchPage />} />
-                <Route path="/favorites" element={<FavoritesPage />} />
-                <Route path="/stats" element={<StatsPage />} />
-                <Route path="/item/:id" element={<ItemDetailPage />} />
-              </Routes>
-            </AppLayout>
-          </BrowserRouter>
-        </SearchProvider>
-      </ErrorBoundary>
+      <I18nProvider>
+        <ErrorBoundary>
+          <SearchProvider>
+            <BrowserRouter>
+              <AppLayout>
+                <Routes>
+                  <Route path="/" element={<SearchPage />} />
+                  <Route path="/favorites" element={<FavoritesPage />} />
+                  <Route path="/stats" element={<StatsPage />} />
+                  <Route path="/item/:id" element={<ItemDetailPage />} />
+                </Routes>
+              </AppLayout>
+            </BrowserRouter>
+          </SearchProvider>
+        </ErrorBoundary>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

@@ -1,5 +1,6 @@
 import { Heart, FolderOpen, Tag, Search } from "lucide-react";
 import { useStatistics } from "../hooks/useStatistics";
+import { useI18n } from "../lib/i18n";
 
 // ── Reusable bar component ────────────────────────────
 
@@ -93,6 +94,7 @@ export default function StatsPage() {
     isLoading,
     isError,
   } = useStatistics();
+  const { t } = useI18n();
 
   if (isLoading) {
     return (
@@ -105,7 +107,7 @@ export default function StatsPage() {
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-        <p className="text-lg">통계 데이터를 불러오지 못했습니다.</p>
+        <p className="text-lg">{t.common.error}</p>
       </div>
     );
   }
@@ -122,7 +124,7 @@ export default function StatsPage() {
   return (
     <div className="p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        <h2 className="text-xl font-bold text-gray-900">통계 대시보드</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t.stats.title}</h2>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -176,20 +178,23 @@ export default function StatsPage() {
           </Section>
 
           {/* Price distribution */}
-          <Section title="가격대별 분포">
+          <Section title={t.stats.priceDistribution}>
             {prices.length === 0 ? (
-              <p className="text-sm text-gray-400">데이터 없음</p>
+              <p className="text-sm text-gray-400">{t.stats.noData}</p>
             ) : (
               <div className="space-y-2">
-                {prices.map((p) => (
-                  <HorizontalBar
-                    key={p.label}
-                    label={`¥${p.label}`}
-                    value={p.count}
-                    maxValue={priceMax}
-                    color="bg-emerald-500"
-                  />
-                ))}
+                {prices.map((p) => {
+                  const priceLabel = t.priceBuckets[p.label as keyof typeof t.priceBuckets] ?? `¥${p.label}`;
+                  return (
+                    <HorizontalBar
+                      key={p.label}
+                      label={priceLabel}
+                      value={p.count}
+                      maxValue={priceMax}
+                      color="bg-emerald-500"
+                    />
+                  );
+                })}
               </div>
             )}
           </Section>
@@ -198,9 +203,9 @@ export default function StatsPage() {
         {/* Charts row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top shops */}
-          <Section title="자주 찾는 샵 Top 10">
+          <Section title={t.stats.topShops}>
             {shops.length === 0 ? (
-              <p className="text-sm text-gray-400">데이터 없음</p>
+              <p className="text-sm text-gray-400">{t.stats.noData}</p>
             ) : (
               <div className="space-y-2">
                 {shops.map((s) => (
@@ -217,16 +222,16 @@ export default function StatsPage() {
           </Section>
 
           {/* Top tags */}
-          <Section title="자주 사용한 태그">
+          <Section title={t.stats.topTags}>
             {tags.length === 0 ? (
-              <p className="text-sm text-gray-400">태그 없음</p>
+              <p className="text-sm text-gray-400">{t.stats.noData}</p>
             ) : (
               <div className="space-y-2">
-                {tags.map((t) => (
+                {tags.map((tag) => (
                   <HorizontalBar
-                    key={t.tag}
-                    label={t.tag}
-                    value={t.count}
+                    key={tag.tag}
+                    label={tag.tag}
+                    value={tag.count}
                     maxValue={tagMax}
                     color="bg-amber-500"
                   />
@@ -239,9 +244,9 @@ export default function StatsPage() {
         {/* Charts row 3 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Monthly timeline */}
-          <Section title="월별 즐겨찾기 추가">
+          <Section title={t.stats.monthlyFavorites}>
             {monthly.length === 0 ? (
-              <p className="text-sm text-gray-400">데이터 없음</p>
+              <p className="text-sm text-gray-400">{t.stats.noData}</p>
             ) : (
               <div className="flex items-end gap-1 h-40">
                 {monthly.map((m) => {
@@ -271,9 +276,9 @@ export default function StatsPage() {
           </Section>
 
           {/* Search history */}
-          <Section title="자주 검색한 키워드">
+          <Section title={t.stats.searchHistory}>
             {searches.length === 0 ? (
-              <p className="text-sm text-gray-400">검색 기록 없음</p>
+              <p className="text-sm text-gray-400">{t.stats.noData}</p>
             ) : (
               <div className="space-y-2">
                 {searches.map((s) => (

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { X } from "lucide-react";
+import { useI18n } from "../../lib/i18n";
 
 interface Props {
   itemId: number;
@@ -12,6 +13,7 @@ export default function TagEditor({ itemId, tags, allUserTags, onSetTags }: Prop
   const [input, setInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { t } = useI18n();
 
   const suggestions = allUserTags
     .filter((t) => t.toLowerCase().includes(input.toLowerCase()) && !tags.includes(t))
@@ -72,7 +74,7 @@ export default function TagEditor({ itemId, tags, allUserTags, onSetTags }: Prop
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             onKeyDown={handleKeyDown}
-            placeholder={tags.length === 0 ? "태그 추가..." : "+"}
+            placeholder={tags.length === 0 ? t.tags.addTag : "+"}
             maxLength={100}
             className="w-20 px-1 py-0.5 text-xs border-none outline-none bg-transparent"
           />

@@ -1,16 +1,8 @@
 import { useState, useRef, useEffect, useCallback, type FormEvent } from "react";
 import { Search } from "lucide-react";
 import { clsx } from "clsx";
-import { UI_TEXT } from "../../lib/constants";
+import { useI18n } from "../../lib/i18n";
 import { getSuggestions, type SearchSuggestion } from "../../lib/search-suggestions";
-
-const CATEGORY_LABELS: Record<string, string> = {
-  avatar: UI_TEXT.suggestion.avatar,
-  item: UI_TEXT.suggestion.item,
-  vrc: UI_TEXT.suggestion.vrc,
-  katakana: UI_TEXT.suggestion.katakana,
-  mixed: UI_TEXT.suggestion.mixed,
-};
 
 interface Props {
   onSearch: (keyword: string) => void;
@@ -24,6 +16,15 @@ export default function SearchBar({
   isLoading,
 }: Props) {
   const [keyword, setKeyword] = useState(initialKeyword);
+  const { t } = useI18n();
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    avatar: t.suggestion.avatar,
+    item: t.suggestion.item,
+    vrc: t.suggestion.vrc,
+    katakana: t.suggestion.katakana,
+    mixed: t.suggestion.mixed,
+  };
 
   useEffect(() => setKeyword(initialKeyword), [initialKeyword]);
 
@@ -115,7 +116,7 @@ export default function SearchBar({
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-          placeholder={UI_TEXT.search.placeholder}
+          placeholder={t.search.placeholder}
           className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
         />
 
@@ -164,7 +165,7 @@ export default function SearchBar({
         disabled={isLoading || !keyword.trim()}
         className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {UI_TEXT.search.button}
+        {t.search.button}
       </button>
     </form>
   );

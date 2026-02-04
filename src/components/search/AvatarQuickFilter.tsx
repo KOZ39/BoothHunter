@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { clsx } from "clsx";
-import { UI_TEXT } from "../../lib/constants";
+import { useI18n } from "../../lib/i18n";
 import { usePopularAvatars } from "../../hooks/usePopularAvatars";
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
 export default function AvatarQuickFilter({ onSearch }: Props) {
   const { avatars, isLoading } = usePopularAvatars();
   const [activeAvatar, setActiveAvatar] = useState<string | null>(null);
+  const { t } = useI18n();
 
   if (isLoading || avatars.length === 0) return null;
 
@@ -34,12 +35,12 @@ export default function AvatarQuickFilter({ onSearch }: Props) {
     <div>
       <div className="flex items-center gap-2 mb-2">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          {UI_TEXT.avatarFilter.title}
+          {t.avatarFilter.title}
         </h3>
       </div>
       <div
         className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin"
-        title={UI_TEXT.avatarFilter.clickHint}
+        title={t.avatarFilter.clickHint}
       >
         {avatars.map((avatar) => (
           <button
@@ -52,14 +53,14 @@ export default function AvatarQuickFilter({ onSearch }: Props) {
                 ? "bg-indigo-100 border-indigo-300 text-indigo-700"
                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300",
             )}
-            aria-label={`${avatar.name_ko} (${avatar.name_ja})${avatar.item_count > 0 ? ` - ${avatar.item_count}건` : ""}`}
+            aria-label={`${avatar.name_ko} (${avatar.name_ja})${avatar.item_count > 0 ? ` - ${avatar.item_count} ${t.avatarFilter.items}` : ""}`}
             aria-pressed={activeAvatar === avatar.name_ja}
             title={`${avatar.name_ko} (${avatar.name_ja})`}
           >
             <span>{avatar.name_ko}</span>
             {avatar.item_count > 0 && (
               <span className="text-[10px] text-gray-400">
-                {avatar.item_count}{UI_TEXT.avatarFilter.items}
+                {avatar.item_count} {t.avatarFilter.items}
               </span>
             )}
           </button>
