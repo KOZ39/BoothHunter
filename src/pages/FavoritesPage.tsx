@@ -4,7 +4,7 @@ import FavoritesList from "../components/favorites/FavoritesList";
 import CollectionSidebar from "../components/favorites/CollectionSidebar";
 import { useFavorites } from "../hooks/useFavorites";
 import { useCollectionItems } from "../hooks/useCollections";
-import { UI_TEXT } from "../lib/constants";
+import { useI18n } from "../lib/i18n";
 import type { FavoriteItem } from "../lib/types";
 
 export default function FavoritesPage() {
@@ -12,6 +12,7 @@ export default function FavoritesPage() {
   const [tagFilter, setTagFilter] = useState("");
   const { favorites } = useFavorites();
   const collectionItemsQuery = useCollectionItems(selectedCollection);
+  const { t, language } = useI18n();
 
   const baseItems: FavoriteItem[] = selectedCollection != null
     ? (collectionItemsQuery.data ?? [])
@@ -28,11 +29,18 @@ export default function FavoritesPage() {
     );
   }, [tagFilter, baseItems]);
 
+  const searchPlaceholder = language === "ko" 
+    ? "이름/샵/카테고리 검색..." 
+    : "Search name/shop/category...";
+  const countText = language === "ko"
+    ? `${displayItems.length}건`
+    : `${displayItems.length} items`;
+
   return (
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
-          {UI_TEXT.favorites.title}
+          {t.favorites.title}
         </h2>
 
         <div className="flex gap-6">
@@ -52,12 +60,12 @@ export default function FavoritesPage() {
                 <input
                   value={tagFilter}
                   onChange={(e) => setTagFilter(e.target.value)}
-                  placeholder="이름/샵/카테고리 검색..."
+                  placeholder={searchPlaceholder}
                   className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
               <span className="text-sm text-gray-500">
-                {displayItems.length}건
+                {countText}
               </span>
             </div>
 

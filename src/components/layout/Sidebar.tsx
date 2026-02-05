@@ -18,8 +18,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import { clsx } from "clsx";
-import { UI_TEXT, VRCHAT_CATEGORIES } from "../../lib/constants";
+import { VRCHAT_CATEGORIES } from "../../lib/constants";
 import { useSearchContext } from "../../lib/SearchContext";
+import { useI18n, getCategoryLabel } from "../../lib/i18n";
+import LanguageSelector from "../common/LanguageSelector";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   User,
@@ -34,16 +36,17 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Sparkles,
 };
 
-const navItems = [
-  { to: "/", icon: Search, label: UI_TEXT.nav.search },
-  { to: "/favorites", icon: Heart, label: UI_TEXT.nav.favorites },
-  { to: "/stats", icon: BarChart3, label: UI_TEXT.nav.stats },
-];
-
 export default function Sidebar() {
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const { activeCategory, setActiveCategory } = useSearchContext();
+  const { t } = useI18n();
   const navigate = useNavigate();
+
+  const navItems = [
+    { to: "/", icon: Search, label: t.nav.search },
+    { to: "/favorites", icon: Heart, label: t.nav.favorites },
+    { to: "/stats", icon: BarChart3, label: t.nav.stats },
+  ];
 
   const handleCategoryClick = (jaName: string) => {
     const next = activeCategory === jaName ? null : jaName;
@@ -57,10 +60,10 @@ export default function Sidebar() {
         <div className="flex items-center gap-2">
           <Store className="w-6 h-6 text-indigo-600" />
           <h1 className="text-lg font-bold text-gray-900">
-            {UI_TEXT.appName}
+            {t.appName}
           </h1>
         </div>
-        <p className="text-xs text-gray-500 mt-1">Booth.pm 상품 검색</p>
+        <p className="text-xs text-gray-500 mt-1">Booth.pm {t.nav.search}</p>
       </div>
       <nav className="flex-1 p-2 overflow-y-auto">
         {navItems.map((item) => (
@@ -87,7 +90,7 @@ export default function Sidebar() {
             onClick={() => setIsCategoryOpen(!isCategoryOpen)}
             className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700"
           >
-            <span>{UI_TEXT.nav.vrchat}</span>
+            <span>{t.nav.vrchat}</span>
             <ChevronDown
               className={clsx(
                 "w-3.5 h-3.5 transition-transform",
@@ -111,7 +114,7 @@ export default function Sidebar() {
                     )}
                   >
                     {Icon && <Icon className="w-3.5 h-3.5 shrink-0" />}
-                    <span className="truncate">{cat.koLabel}</span>
+                    <span className="truncate">{getCategoryLabel(cat.jaName, t)}</span>
                   </button>
                 );
               })}
@@ -119,6 +122,11 @@ export default function Sidebar() {
           )}
         </div>
       </nav>
+
+      {/* Language Selector */}
+      <div className="border-t border-gray-200">
+        <LanguageSelector />
+      </div>
     </aside>
   );
 }

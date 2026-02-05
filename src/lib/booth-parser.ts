@@ -1,7 +1,5 @@
 import type { BoothItem } from "./types";
 
-// ── Search results parsing ───────────────────────────────
-
 export interface ParsedSearchResult {
   items: BoothItem[];
   totalCount: number | null;
@@ -10,7 +8,6 @@ export interface ParsedSearchResult {
 export function parseSearchHtml(html: string): ParsedSearchResult {
   const doc = new DOMParser().parseFromString(html, "text/html");
 
-  // Try multiple card selectors in case Booth.pm changes their markup
   const cardSelectors = [
     "li.item-card[data-product-id]",
     "[data-product-id].item-card",
@@ -241,7 +238,6 @@ export function parseItemDetailHtml(
     catEl?.textContent?.trim() ||
     null;
 
-  // Try to extract wish count from detail page
   let wishListsCount: number | undefined;
   const wishEl = queryFirstDoc(doc, [
     ".wish-list-count",

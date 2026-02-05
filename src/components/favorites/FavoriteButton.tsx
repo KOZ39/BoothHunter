@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Heart, Loader2 } from "lucide-react";
 import { clsx } from "clsx";
 import type { BoothItem } from "../../lib/types";
+import { useI18n } from "../../lib/i18n";
 
 interface Props {
   item: BoothItem;
@@ -12,6 +13,7 @@ interface Props {
 
 export default function FavoriteButton({ item, favorited, onAdd, onRemove }: Props) {
   const [isPending, setIsPending] = useState(false);
+  const { t } = useI18n();
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -42,8 +44,8 @@ export default function FavoriteButton({ item, favorited, onAdd, onRemove }: Pro
           ? "text-red-500 hover:text-red-600"
           : "text-gray-300 hover:text-red-400",
       )}
-      title={favorited ? "즐겨찾기 제거" : "즐겨찾기 추가"}
-      aria-label={favorited ? "즐겨찾기 제거" : "즐겨찾기 추가"}
+      title={favorited ? t.favorites.removed : t.favorites.added}
+      aria-label={favorited ? t.favorites.removed : t.favorites.added}
     >
       {isPending ? (
         <Loader2 className="w-4 h-4 animate-spin" />

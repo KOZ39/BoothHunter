@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { FolderPlus, Check } from "lucide-react";
 import { clsx } from "clsx";
 import type { Collection } from "../../lib/types";
+import { useI18n } from "../../lib/i18n";
 
 interface Props {
   itemId: number;
@@ -19,6 +20,7 @@ export default function AddToCollectionMenu({
   onRemoveFromCollection,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   const memberOf = useMemo(() => new Set(memberCollectionIds), [memberCollectionIds]);
 
@@ -41,7 +43,7 @@ export default function AddToCollectionMenu({
       <button
         onClick={() => setOpen(!open)}
         className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
-        title="컬렉션에 추가"
+        title={t.collections.addToCollection}
       >
         <FolderPlus className="w-4 h-4" />
       </button>

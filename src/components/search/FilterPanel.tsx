@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Filter, X, Heart } from "lucide-react";
 import { clsx } from "clsx";
-import { UI_TEXT, SORT_OPTIONS } from "../../lib/constants";
+import { useI18n, getSortLabel } from "../../lib/i18n";
 import type { SearchParams } from "../../lib/types";
+
+const SORT_VALUES = ["new", "popular", "price_asc", "price_desc"] as const;
 
 interface Props {
   params: SearchParams;
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export default function FilterPanel({ params, onFilterChange, isEnriching }: Props) {
+  const { t, language } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [priceMin, setPriceMin] = useState(
     params.price_min?.toString() ?? "",
@@ -70,7 +73,7 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
           )}
         >
           <Filter className="w-3.5 h-3.5" />
-          {UI_TEXT.filter.filter}
+          {t.filter.filter}
         </button>
 
         {/* Sort dropdown inline */}
@@ -81,10 +84,10 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
           }
           className="px-3 py-1.5 rounded-lg text-sm border border-gray-300 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
-          <option value="">{UI_TEXT.filter.sort}</option>
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
+          <option value="">{t.filter.sort}</option>
+          {SORT_VALUES.map((value) => (
+            <option key={value} value={value}>
+              {getSortLabel(value, t)}
             </option>
           ))}
         </select>
@@ -101,7 +104,7 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
             }
             className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
-          {UI_TEXT.filter.freeOnly}
+          {t.filter.freeOnly}
         </label>
 
         {/* Active filter indicators */}
@@ -111,7 +114,7 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
             className="flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:text-red-700"
           >
             <X className="w-3 h-3" />
-            {UI_TEXT.filter.reset}
+            {t.filter.reset}
           </button>
         )}
       </div>
@@ -121,12 +124,12 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
           {/* Price range */}
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-2">
-              {UI_TEXT.filter.priceRange}
+              {t.filter.priceRange}
             </h4>
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                placeholder="¥ 최소"
+                placeholder={language === "ko" ? "¥ 최소" : "¥ Min"}
                 value={priceMin}
                 onChange={(e) => setPriceMin(e.target.value)}
                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -134,7 +137,7 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
               <span className="text-gray-400">~</span>
               <input
                 type="number"
-                placeholder="¥ 최대"
+                placeholder={language === "ko" ? "¥ 최대" : "¥ Max"}
                 value={priceMax}
                 onChange={(e) => setPriceMax(e.target.value)}
                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -143,7 +146,7 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
                 onClick={handleApplyPrice}
                 className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
               >
-                {UI_TEXT.filter.apply}
+                {t.filter.apply}
               </button>
             </div>
           </div>
@@ -152,10 +155,10 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
               <Heart className="w-3.5 h-3.5 text-pink-500" />
-              {UI_TEXT.filter.minWishCount}
+              {t.filter.minWishCount}
               {isEnriching && (
                 <span className="text-xs text-gray-400 font-normal ml-1">
-                  (로딩 중...)
+                  ({t.common.loading})
                 </span>
               )}
             </h4>
@@ -168,12 +171,14 @@ export default function FilterPanel({ params, onFilterChange, isEnriching }: Pro
                 onChange={(e) => setWishMin(e.target.value)}
                 className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
-              <span className="text-xs text-gray-500">개 이상</span>
+              <span className="text-xs text-gray-500">
+                {language === "ko" ? "개 이상" : "or more"}
+              </span>
               <button
                 onClick={handleApplyWish}
                 className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
               >
-                {UI_TEXT.filter.apply}
+                {t.filter.apply}
               </button>
             </div>
           </div>

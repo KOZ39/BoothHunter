@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { clsx } from "clsx";
-import { UI_TEXT } from "../../lib/constants";
+import { useI18n } from "../../lib/i18n";
 
 interface Props {
   currentPage: number;
@@ -13,18 +13,24 @@ export default function Pagination({
   totalPages,
   onPageChange,
 }: Props) {
+  const { t, language } = useI18n();
   const pages = getPageNumbers(currentPage, totalPages);
 
+  const navLabel = language === "ko" ? "검색 결과 페이지 탐색" : "Search results pagination";
+  const prevLabel = language === "ko" ? "이전 페이지" : "Previous page";
+  const nextLabel = language === "ko" ? "다음 페이지" : "Next page";
+  const pageLabel = (p: number) => language === "ko" ? `${p} 페이지` : `Page ${p}`;
+
   return (
-    <nav role="navigation" aria-label="검색 결과 페이지 탐색" className="flex items-center justify-center gap-1">
+    <nav role="navigation" aria-label={navLabel} className="flex items-center justify-center gap-1">
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        aria-label="이전 페이지"
+        aria-label={prevLabel}
         className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <ChevronLeft className="w-4 h-4" />
-        {UI_TEXT.common.prev}
+        {t.common.prev}
       </button>
 
       {pages.map((page, idx) =>
@@ -36,7 +42,7 @@ export default function Pagination({
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            aria-label={`${page} 페이지`}
+            aria-label={pageLabel(page)}
             aria-current={page === currentPage ? "page" : undefined}
             className={clsx(
               "w-8 h-8 rounded-lg text-sm font-medium transition-colors",
@@ -53,10 +59,10 @@ export default function Pagination({
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        aria-label="다음 페이지"
+        aria-label={nextLabel}
         className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {UI_TEXT.common.next}
+        {t.common.next}
         <ChevronRight className="w-4 h-4" />
       </button>
     </nav>

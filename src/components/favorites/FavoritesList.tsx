@@ -10,7 +10,7 @@ import {
 } from "../../hooks/useCollections";
 import { setItemTags } from "../../lib/booth-api";
 import { useQueryClient } from "@tanstack/react-query";
-import { UI_TEXT } from "../../lib/constants";
+import { useI18n } from "../../lib/i18n";
 import type { FavoriteItem } from "../../lib/types";
 import TagEditor from "./TagEditor";
 import AddToCollectionMenu from "./AddToCollectionMenu";
@@ -26,6 +26,7 @@ export default memo(function FavoritesList({ items }: Props) {
   const { data: tagsBatch } = useAllItemTagsBatch();
   const { data: collectionsBatch } = useAllItemCollectionsBatch();
   const qc = useQueryClient();
+  const { t } = useI18n();
   const displayItems = items ?? favorites;
 
   const handleSetTags = useCallback(async (itemId: number, tags: string[]) => {
@@ -46,7 +47,7 @@ export default memo(function FavoritesList({ items }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-400">
         <Heart className="w-16 h-16 mb-4" />
-        <p className="text-lg">{UI_TEXT.favorites.empty}</p>
+        <p className="text-lg">{t.favorites.empty}</p>
       </div>
     );
   }
@@ -93,7 +94,7 @@ export default memo(function FavoritesList({ items }: Props) {
                 <button
                   onClick={() => removeFavorite(fav.item_id).catch((e) => console.error("Remove failed:", e))}
                   className="p-1 text-gray-300 hover:text-red-500 transition-colors"
-                  title="즐겨찾기 제거"
+                  title={t.favorites.removed}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -104,7 +105,7 @@ export default memo(function FavoritesList({ items }: Props) {
                 className={`text-sm font-bold ${fav.price === 0 ? "text-green-600" : "text-gray-900"}`}
               >
                 {fav.price === 0
-                  ? UI_TEXT.item.free
+                  ? t.item.free
                   : `¥${fav.price.toLocaleString()}`}
               </span>
               {fav.shop_name && (

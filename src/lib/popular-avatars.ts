@@ -24,7 +24,6 @@ export async function updateAvatarData(): Promise<void> {
     try {
       const keyword = `${avatar.name_ja} 対応`;
       const url = `https://booth.pm/ja/browse/${encodeURIComponent("3D衣装")}?q=${encodeURIComponent(keyword)}&page=1`;
-      // Uses separate background rate limiter — never blocks user searches
       const resp = await backgroundFetch(url);
       if (!resp.ok) continue;
 
