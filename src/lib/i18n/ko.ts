@@ -119,6 +119,13 @@ export const ko: Translations = {
     "3Dツール・システム": "3D 툴/시스템",
     "VRoid": "VRoid",
   },
+  updater: {
+    available: "새로운 버전이 있습니다",
+    downloading: "업데이트 다운로드 중...",
+    install: "업데이트",
+    dismiss: "나중에",
+    error: "업데이트 중 오류가 발생했습니다",
+  },
   priceBuckets: {
     free: "무료",
     "~500": "~500",
