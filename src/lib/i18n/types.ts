@@ -119,6 +119,13 @@ export interface Translations {
     "3Dツール・システム": string;
     "VRoid": string;
   };
+  updater: {
+    available: string;
+    downloading: string;
+    install: string;
+    dismiss: string;
+    error: string;
+  };
   priceBuckets: {
     free: string;
     "~500": string;
